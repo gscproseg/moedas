@@ -1,79 +1,53 @@
 import streamlit as st
-import numpy as np
 import cv2
+import numpy as np
+from keras.models import load_model
 from PIL import Image
-from keras.models import load_model  # Importação correta do módulo Keras
 
-# Defina o caminho para o modelo
-model_path = './keras_model.h5'  # Ajuste o caminho conforme necessário
+# Load the model
+model = load_model("keras_Model.h5", compile=False)
 
-# Tente carregar o modelo
-try:
-    model = load_model(model_path, compile=False)
-except FileNotFoundError:
-    st.error(f"Arquivo de modelo não encontrado: {model_path}")
-    st.stop()
+# Load the labels
+with open("labels.txt", "r") as file:
+    class_names = [line.strip() for line in file.readlines()]
 
-data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32)
-classes = ["1 real", "25 cent", "50 cent"]
+# Define a function to preprocess the image
+def preprocess_image(image):
+    image = cv2.resize(image, (224, 224), interpolation=cv2.INTER_AREA)
+    image = np.asarray(image, dtype=np.float32).reshape(1, 224, 224, 3)
+    image = (image / 127.5) - 1
+    return image
 
-def preProcess(img):
-    imgPre = cv2.GaussianBlur(img, (5, 5), 3)
-    imgPre = cv2.Canny(imgPre, 90, 140)
-    kernel = np.ones((4, 4), np.uint8)
-    imgPre = cv2.dilate(imgPre, kernel, iterations=2)
-    imgPre = cv2.erode(imgPre, kernel, iterations=1)
-    return imgPre
-
-def DetectarMoeda(img):
-    imgMoeda = cv2.resize(img, (224, 224))
-    imgMoeda = np.asarray(imgMoeda)
-    imgMoedaNormalize = (imgMoeda.astype(np.float32) / 127.0) - 1
-    data[0] = imgMoedaNormalize
-    prediction = model.predict(data)
+# Define a function to make predictions
+def predict_class(image):
+    preprocessed_image = preprocess_image(image)
+    prediction = model.predict(preprocessed_image)
     index = np.argmax(prediction)
-    percent = prediction[0][index]
-    classe = classes[index]
-    return classe, percent
+    class_name = class_names[index]
+    confidence_score = prediction[0][index]
+    return class_name, confidence_score
 
-# Função para processar o feed de vídeo
-def process_video_frame(frame):
-    img = cv2.resize(frame, (640, 480))
-    imgPre = preProcess(img)
-    contours, _ = cv2.findContours(imgPre, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+st.title("Classificador de Imagens em Tempo Real")
 
-    qtd = 0
-    for cnt in contours:
-        area = cv2.contourArea(cnt)
-        if area > 2000:
-            x, y, w, h = cv2.boundingRect(cnt)
-            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            recorte = img[y:y + h, x:x + w]
-            classe, conf = DetectarMoeda(recorte)
-            if conf > 0.7:
-                cv2.putText(img, str(classe), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
-                if classe == '1 real':
-                    qtd += 1
-                if classe == '25 cent':
-                    qtd += 0.25
-                if classe == '50 cent':
-                    qtd += 0.5
+# Use Streamlit's camera input
+camera = st.camera_input("Capture uma imagem")
 
-    cv2.rectangle(img, (430, 30), (600, 80), (0, 0, 255), -1)
-    cv2.putText(img, f'R$ {qtd}', (440, 67), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 255, 255), 2)
-    
-    return img
+if camera:
+    # Read the image from the camera
+    image = np.array(camera)
+    st.image(image, channels="BGR", caption="Imagem Capturada")
 
-# Configuração do Streamlit
-st.title("Detecção de Moeda em Tempo Real")
+    # Make a prediction
+    class_name, confidence_score = predict_class(image)
 
-video_capture = st.camera_input("Captura de Vídeo")
+    # Display the result
+    st.write(f"Classificação: {class_name}")
+    st.write(f"Confiança: {confidence_score:.2f}")
 
-if video_capture:
-    frame = video_capture.read()
-    if frame is not None:
-        frame = np.array(frame)
-        processed_frame = process_video_frame(frame)
-        st.image(processed_frame, channels="BGR", caption="Vídeo em Tempo Real")
+    # Optionally, you can add a button to capture the image
+    if st.button('Capturar Imagem'):
+        st.write("Imagem Capturada")
+        # Save or process the captured image if needed
+
 else:
-    st.text("Não há vídeo disponível")
+    st.text("Nenhuma imagem capturada")
