@@ -4,12 +4,22 @@ import numpy as np
 from keras.models import load_model
 from PIL import Image
 
+# Paths to model and labels in the root directory
+model_path = "keras_Model.h5"
+labels_path = "labels.txt"
+
 # Load the model
-model = load_model("keras_Model.h5", compile=False)
+try:
+    model = load_model(model_path, compile=False)
+except Exception as e:
+    st.error(f"Erro ao carregar o modelo: {e}")
 
 # Load the labels
-with open("labels.txt", "r") as file:
-    class_names = [line.strip() for line in file.readlines()]
+try:
+    with open(labels_path, "r") as file:
+        class_names = [line.strip() for line in file.readlines()]
+except Exception as e:
+    st.error(f"Erro ao carregar o arquivo de labels: {e}")
 
 # Define a function to preprocess the image
 def preprocess_image(image):
@@ -43,11 +53,6 @@ if camera:
     # Display the result
     st.write(f"Classificação: {class_name}")
     st.write(f"Confiança: {confidence_score:.2f}")
-
-    # Optionally, you can add a button to capture the image
-    if st.button('Capturar Imagem'):
-        st.write("Imagem Capturada")
-        # Save or process the captured image if needed
 
 else:
     st.text("Nenhuma imagem capturada")
