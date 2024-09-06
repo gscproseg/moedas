@@ -46,7 +46,7 @@ def main():
     st.title("Detecção de Moeda com Modelo Keras")
 
     # Caminho do modelo e rótulos
-    model_path = "model/keras.model.h5"
+    model_path = "model/keras_model.h5"
     label_path = "model/labels.txt"
     
     # Carregar o modelo e rótulos
