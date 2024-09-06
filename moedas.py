@@ -2,12 +2,12 @@ import streamlit as st
 import numpy as np
 import cv2
 from PIL import Image
-from keras.models import load_model  # Importar corretamente do módulo keras.models
+from keras.models import load_model  # Importação correta do módulo Keras
 
-# Caminho para o modelo
-model_path = 'keras_model.h5'
+# Defina o caminho para o modelo
+model_path = './keras_model.h5'  # Ajuste o caminho conforme necessário
 
-# Carregar o modelo
+# Tente carregar o modelo
 try:
     model = load_model(model_path, compile=False)
 except FileNotFoundError:
@@ -36,6 +36,7 @@ def DetectarMoeda(img):
     classe = classes[index]
     return classe, percent
 
+# Função para processar o feed de vídeo
 def process_video_frame(frame):
     img = cv2.resize(frame, (640, 480))
     imgPre = preProcess(img)
@@ -63,6 +64,7 @@ def process_video_frame(frame):
     
     return img
 
+# Configuração do Streamlit
 st.title("Detecção de Moeda em Tempo Real")
 
 video_capture = st.camera_input("Captura de Vídeo")
