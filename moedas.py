@@ -2,7 +2,7 @@ import streamlit as st
 import numpy as np
 import cv2
 from PIL import Image
-from keras.models import load_model
+from Keras_model import load_model
 
 # Carregar o modelo
 model = load_model('Keras_model.h5', compile=False)
