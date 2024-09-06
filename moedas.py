@@ -5,7 +5,7 @@ from PIL import Image
 import os
 
 # Caminho dos arquivos
-model_path = "./keras_Model.h5"
+model_path = "./keras_model.h5"
 labels_path = "./labels.txt"
 
 # Verifique se o arquivo do modelo e o arquivo de labels existem
