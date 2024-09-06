@@ -3,10 +3,15 @@ import tensorflow as tf
 from keras.models import load_model
 import cv2
 import numpy as np
+import os
 
 # Verificar versões
 st.write("TensorFlow version:", tf.__version__)
 st.write("Keras version:", tf.keras.__version__)
+
+# Verificar diretório atual e listar arquivos
+st.write("Diretório atual:", os.getcwd())
+st.write("Arquivos no diretório:", os.listdir(os.getcwd()))
 
 # Função para carregar o modelo
 @st.cache_resource
@@ -40,9 +45,11 @@ def preprocess_image(image):
 def main():
     st.title("Detecção de Moeda com Modelo Keras")
 
-    # Carregar o modelo e rótulos
-    model_path = "keras_model.h5"
+    # Caminho do modelo e rótulos
+    model_path = "keras_Model.h5"
     label_path = "labels.txt"
+    
+    # Carregar o modelo e rótulos
     model = load_keras_model(model_path)
     labels = load_labels(label_path)
 
