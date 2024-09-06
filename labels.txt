@@ -1,0 +1,3 @@
+0 1 real
+1 0.5 cent
+2 0.25 cent
