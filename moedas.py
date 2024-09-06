@@ -5,7 +5,7 @@ from PIL import Image
 from keras_model import load_model
 
 # Carregar o modelo
-model = load_model('Keras_model.h5', compile=False)
+model = load_model('keras_model.h5', compile=False)
 data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32)
 classes = ["1 real", "25 cent", "50 cent"]
 
