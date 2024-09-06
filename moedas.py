@@ -41,7 +41,7 @@ def main():
     st.title("Detecção de Moeda com Modelo Keras")
 
     # Carregar o modelo e rótulos
-    model_path = "keras_Model.h5"
+    model_path = "keras_model.h5"
     label_path = "labels.txt"
     model = load_keras_model(model_path)
     labels = load_labels(label_path)
