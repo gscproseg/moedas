@@ -1,34 +1,40 @@
 import streamlit as st
-import cv2
 import numpy as np
 from keras.models import load_model
 from PIL import Image
+import os
 
-# Paths to model and labels in the root directory
-model_path = "keras_Model.h5"
-labels_path = "labels.txt"
+# Caminho dos arquivos
+model_path = "./keras_Model.h5"
+labels_path = "./labels.txt"
 
-# Load the model
+# Verifique se o arquivo do modelo e o arquivo de labels existem
+if not os.path.isfile(model_path):
+    st.error(f"Arquivo do modelo não encontrado: {model_path}")
+if not os.path.isfile(labels_path):
+    st.error(f"Arquivo de labels não encontrado: {labels_path}")
+
+# Carregar o modelo
 try:
     model = load_model(model_path, compile=False)
 except Exception as e:
     st.error(f"Erro ao carregar o modelo: {e}")
 
-# Load the labels
+# Carregar as labels
 try:
     with open(labels_path, "r") as file:
         class_names = [line.strip() for line in file.readlines()]
 except Exception as e:
     st.error(f"Erro ao carregar o arquivo de labels: {e}")
 
-# Define a function to preprocess the image
+# Função para preprocessar a imagem
 def preprocess_image(image):
-    image = cv2.resize(image, (224, 224), interpolation=cv2.INTER_AREA)
-    image = np.asarray(image, dtype=np.float32).reshape(1, 224, 224, 3)
+    image = image.resize((224, 224), Image.Resampling.LANCZOS)
+    image = np.array(image, dtype=np.float32).reshape(1, 224, 224, 3)
     image = (image / 127.5) - 1
     return image
 
-# Define a function to make predictions
+# Função para fazer previsões
 def predict_class(image):
     preprocessed_image = preprocess_image(image)
     prediction = model.predict(preprocessed_image)
@@ -39,20 +45,12 @@ def predict_class(image):
 
 st.title("Classificador de Imagens em Tempo Real")
 
-# Use Streamlit's camera input
+# Usar a entrada da câmera do Streamlit
 camera = st.camera_input("Capture uma imagem")
 
 if camera:
-    # Read the image from the camera
-    image = np.array(camera)
-    st.image(image, channels="BGR", caption="Imagem Capturada")
+    # Ler a imagem da câmera
+    image = Image.open(camera)
+    st.image(image, caption="Imagem Capturada")
 
-    # Make a prediction
-    class_name, confidence_score = predict_class(image)
-
-    # Display the result
-    st.write(f"Classificação: {class_name}")
-    st.write(f"Confiança: {confidence_score:.2f}")
-
-else:
-    st.text("Nenhuma imagem capturada")
+    # Fazer um
