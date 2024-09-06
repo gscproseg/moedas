@@ -1,56 +1,86 @@
 import streamlit as st
-import numpy as np
+import tensorflow as tf
 from keras.models import load_model
-from PIL import Image
-import os
+import cv2
+import numpy as np
 
-# Caminho dos arquivos
-model_path = "./keras_model.h5"
-labels_path = "./labels.txt"
+# Verificar versões
+st.write("TensorFlow version:", tf.__version__)
+st.write("Keras version:", tf.keras.__version__)
 
-# Verifique se o arquivo do modelo e o arquivo de labels existem
-if not os.path.isfile(model_path):
-    st.error(f"Arquivo do modelo não encontrado: {model_path}")
-if not os.path.isfile(labels_path):
-    st.error(f"Arquivo de labels não encontrado: {labels_path}")
+# Função para carregar o modelo
+@st.cache_resource
+def load_keras_model(model_path):
+    try:
+        model = load_model(model_path, compile=False)
+        st.write("Modelo carregado com sucesso!")
+        return model
+    except Exception as e:
+        st.error(f"Erro ao carregar o modelo: {e}")
+        return None
 
-# Carregar o modelo
-try:
-    model = load_model(model_path, compile=False)
-except Exception as e:
-    st.error(f"Erro ao carregar o modelo: {e}")
+# Função para carregar rótulos
+def load_labels(label_path):
+    try:
+        with open(label_path, "r") as f:
+            labels = [line.strip() for line in f.readlines()]
+        return labels
+    except Exception as e:
+        st.error(f"Erro ao carregar os rótulos: {e}")
+        return []
 
-# Carregar as labels
-try:
-    with open(labels_path, "r") as file:
-        class_names = [line.strip() for line in file.readlines()]
-except Exception as e:
-    st.error(f"Erro ao carregar o arquivo de labels: {e}")
-
-# Função para preprocessar a imagem
+# Função para processar a imagem
 def preprocess_image(image):
-    image = image.resize((224, 224), Image.Resampling.LANCZOS)
-    image = np.array(image, dtype=np.float32).reshape(1, 224, 224, 3)
+    image = cv2.resize(image, (224, 224), interpolation=cv2.INTER_AREA)
+    image = np.asarray(image, dtype=np.float32).reshape(1, 224, 224, 3)
     image = (image / 127.5) - 1
     return image
 
-# Função para fazer previsões
-def predict_class(image):
-    preprocessed_image = preprocess_image(image)
-    prediction = model.predict(preprocessed_image)
-    index = np.argmax(prediction)
-    class_name = class_names[index]
-    confidence_score = prediction[0][index]
-    return class_name, confidence_score
+# Função principal para exibir o vídeo e previsões
+def main():
+    st.title("Detecção de Moeda com Modelo Keras")
 
-st.title("Classificador de Imagens em Tempo Real")
+    # Carregar o modelo e rótulos
+    model_path = "keras_Model.h5"
+    label_path = "labels.txt"
+    model = load_keras_model(model_path)
+    labels = load_labels(label_path)
 
-# Usar a entrada da câmera do Streamlit
-camera = st.camera_input("Capture uma imagem")
+    if model is None or not labels:
+        st.stop()
 
-if camera:
-    # Ler a imagem da câmera
-    image = Image.open(camera)
-    st.image(image, caption="Imagem Capturada")
+    # Configurar a câmera
+    camera = cv2.VideoCapture(0)
 
-    # Fazer um
+    stframe = st.empty()
+
+    while True:
+        # Capturar imagem da câmera
+        ret, image = camera.read()
+
+        if not ret:
+            st.error("Não foi possível acessar a câmera.")
+            break
+
+        # Exibir a imagem da câmera
+        stframe.image(image, channels="BGR", use_column_width=True)
+
+        # Processar e fazer previsões
+        processed_image = preprocess_image(image)
+        prediction = model.predict(processed_image)
+        index = np.argmax(prediction)
+        class_name = labels[index]
+        confidence_score = prediction[0][index]
+
+        # Exibir a previsão e a pontuação de confiança
+        st.write(f"Classe: {class_name}")
+        st.write(f"Pontuação de Confiança: {confidence_score * 100:.2f}%")
+
+        # Atualizar a imagem a cada 1 segundo
+        cv2.waitKey(1000)
+
+    camera.release()
+    cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    main()
