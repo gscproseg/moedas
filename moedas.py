@@ -5,7 +5,7 @@ from PIL import Image
 from keras.models import load_model  # Importar corretamente do módulo keras.models
 
 # Caminho para o modelo
-model_path = 'Keras_model.h5'
+model_path = 'keras_model.h5'
 
 # Carregar o modelo
 try:
